@@ -1,3 +1,5 @@
+org: booop
+app: aws-python-twitch-eventsub-to-discord
 service: aws-python-twitch-eventsub-to-discord
 frameworkVersion: '3'
 useDotenv: true
