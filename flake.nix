@@ -19,6 +19,7 @@
           packages = with pkgs; [
             serverless
             nodejs
+            yarn
           ];
 
           shellHook = ''
