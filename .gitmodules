@@ -1,0 +1,3 @@
+[submodule "aws-python-twitch-eventsub-to-discord-webhook"]
+	path = aws-python-twitch-eventsub-to-discord-webhook
+	url = https://github.com/dylmye/aws-python-twitch-eventsub-to-discord-webhook
