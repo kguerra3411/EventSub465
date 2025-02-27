@@ -23,7 +23,6 @@
           ];
 
           shellHook = ''
-            export DATABASE_URL="file:dev.db?cache=shared&mode=rwc"
             echo "Loaded dev shell."
           '';
         };
