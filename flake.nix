@@ -20,6 +20,8 @@
             serverless
             nodejs
             yarn
+            python311
+            python311Packages.pip
           ];
 
           shellHook = ''
