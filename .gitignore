@@ -1,3 +1,5 @@
+*.tfvars
+LocalSettings.php
 .direnv/
 node_modules
 __pycache__
