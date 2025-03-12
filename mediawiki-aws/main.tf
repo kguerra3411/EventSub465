@@ -7,3 +7,30 @@ resource "aws_vpc" "main" {
     Name = "${var.project_name}-vpc"
   }
 }
+
+resource "aws_subnet" "public" {
+  count                   = 2 # so we can create a duplicate instance in another AZ
+  vpc_id                  = aws_vpc.main.id
+  cidr_block              = "10.0.${count.index}.0/24"
+  availability_zone       = data.aws_availability_zones.available.names[count.index]
+  map_public_ip_on_launch = true
+
+  tags = {
+    Name        = "${var.project_name}-public-subnet-${count.index}"
+    Environment = var.environment
+  }
+}
+
+resource "aws_subnet" "private" {
+  count             = 2
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = "10.0.${count.index + 10}.0/24"
+  availability_zone = data.aws_availability_zones.available.names[count.index]
+
+  tags = {
+    Name        = "${var.project_name}-private-subnet-${count.index}"
+    Environment = var.environment
+  }
+}
+
+data "aws_availability_zones" "available" {}
