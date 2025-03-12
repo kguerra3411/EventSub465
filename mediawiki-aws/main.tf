@@ -9,7 +9,7 @@ resource "aws_vpc" "main" {
 }
 
 resource "aws_s3_bucket" "wikiuploads" {
-    bucket = "${var.project_name}-bucket"
+  bucket = "${var.project_name}-bucket"
 
 }
 
@@ -21,22 +21,22 @@ resource "aws_s3_bucket_versioning" "bucket_versioning" {
 }
 
 resource "aws_s3_bucket_public_access_block" "public_access_block" {
-    bucket = aws_s3_bucket.wikiuploads.id
-    block_public_acls = true
-    block_public_policy = true
-    ignore_public_acls = true
-    restrict_public_buckets = true
+  bucket                  = aws_s3_bucket.wikiuploads.id
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
 }
 
 resource "aws_db_instance" "wiki_db" {
   allocated_storage = 10
-  engine = "mariadb"
-  instance_class = "db.t3.micro"
-  identifier = "wiki"
-  db_name = var.db_name
-  username = var.db_username
-  password = var.db_password
-  port = "3306" #can be whatever
+  engine            = "mariadb"
+  instance_class    = "db.t3.micro"
+  identifier        = "wiki"
+  db_name           = var.db_name
+  username          = var.db_username
+  password          = var.db_password
+  port              = "3306" #can be whatever
   #once we have security groups and subnets set up in the vpc we'd add them here i think
   #vpc_security_group_ids = [aws_security_group.rds_sg.id]
   #db_subnet_group_name = aws_db_subnet_group.my_db_subnet_group.name
