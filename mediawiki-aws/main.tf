@@ -30,7 +30,7 @@ resource "aws_s3_bucket_public_access_block" "public_access_block" {
 
 resource "aws_db_instance" "wiki_db" {
   allocated_storage = 10
-  engine = "mysql"
+  engine = "mariadb"
   instance_class = "db.t3.micro"
   identifier = "wiki"
   db_name = var.db_name
