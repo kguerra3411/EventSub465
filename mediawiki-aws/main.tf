@@ -95,9 +95,9 @@ resource "aws_security_group" "ecs" { # for container service
   vpc_id      = aws_vpc.main.id
 
   ingress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
+    from_port       = 0
+    to_port         = 0
+    protocol        = "-1"
     security_groups = [aws_security_group.alb.id]
     # so basically accept all traffic as long as it comes from the alb security group
   }
@@ -121,9 +121,9 @@ resource "aws_security_group" "db" { # for database service
   vpc_id      = aws_vpc.main.id
 
   ingress {
-    from_port   = 3306
-    to_port     = 3306
-    protocol    = "tcp"
+    from_port       = 3306
+    to_port         = 3306
+    protocol        = "tcp"
     security_groups = [aws_security_group.ecs.id]
     # this allows mariadb traffic (3306) from ecs security group
   }
@@ -137,6 +137,66 @@ resource "aws_security_group" "db" { # for database service
 
   tags = {
     Name        = "${var.project_name}-db-sg"
+    Environment = var.environment
+  }
+}
+
+resource "aws_s3_bucket" "wikiuploads" {
+  bucket        = "${var.project_name}-bucket-${random_id.suffix.hex}"
+  force_destroy = true
+
+  tags = {
+    Name        = "${var.project_name}-bucket"
+    Environment = var.environment
+  }
+}
+
+resource "random_id" "suffix" {
+  byte_length = 4
+}
+
+resource "aws_s3_bucket_versioning" "bucket_versioning" {
+  bucket = aws_s3_bucket.wikiuploads.id
+  versioning_configuration {
+    status = "Disabled"
+  }
+}
+
+resource "aws_s3_bucket_public_access_block" "public_access_block" {
+  bucket                  = aws_s3_bucket.wikiuploads.id
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+resource "aws_db_subnet_group" "main" {
+  name       = "${var.project_name}-db-subnet-group"
+  subnet_ids = aws_subnet.private[*].id
+
+  tags = {
+    Name        = "${var.project_name}-db-subnet-group"
+    Environment = var.environment
+  }
+}
+
+resource "aws_db_instance" "wiki_db" {
+  identifier             = "${var.project_name}-db"
+  allocated_storage      = 10
+  engine                 = "mariadb"
+  engine_version         = "11.4.5" # latest version supported by RDS
+  instance_class         = "db.t3.micro"
+  db_name                = var.db_name
+  username               = var.db_username
+  password               = var.db_password
+  port                   = 3306
+  vpc_security_group_ids = [aws_security_group.db.id]
+  db_subnet_group_name   = aws_db_subnet_group.main.name
+  skip_final_snapshot    = true
+  deletion_protection    = false
+
+  tags = {
+    Name        = "${var.project_name}-db"
     Environment = var.environment
   }
 }
