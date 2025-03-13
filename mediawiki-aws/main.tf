@@ -79,7 +79,7 @@ resource "aws_security_group" "alb" { # for load balancer
   egress { # outbound traffic
     from_port   = 0
     to_port     = 0
-    protocol    = "tcp"
+    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
@@ -219,7 +219,7 @@ resource "aws_ecs_task_definition" "mediawiki" {
   execution_role_arn       = aws_iam_role.ecs_execution_role.arn
   task_role_arn            = aws_iam_role.ecs_task_role.arn
 
-  container_definitions = jsonencode({
+  container_definitions = jsonencode([{
     name      = "mediawiki"
     image     = var.mediawiki_image
     essential = true
@@ -233,7 +233,7 @@ resource "aws_ecs_task_definition" "mediawiki" {
     environment = [
       {
         name  = "MYSQL_HOST"
-        value = "aws_db_instance.main.address"
+        value = aws_db_instance.wiki_db.address
       },
       {
         name  = "MYSQL_DATABASE"
@@ -241,10 +241,14 @@ resource "aws_ecs_task_definition" "mediawiki" {
       },
       {
         name  = "MYSQL_USER"
+        value = var.db_username
+      },
+      {
+        name  = "MYSQL_PASSWORD"
         value = var.db_password
       }
     ]
-  })
+  }])
 
   tags = {
     Name        = "${var.project_name}-cluster"
@@ -254,7 +258,7 @@ resource "aws_ecs_task_definition" "mediawiki" {
 
 resource "aws_iam_role" "ecs_execution_role" {
   name                  = "${var.project_name}-ecs_execution_role"
-  description           = "" // TODO:
+  description           = "ECS Execution Role for pulling container images"
   force_detach_policies = true
 
   assume_role_policy = jsonencode({
@@ -283,7 +287,7 @@ resource "aws_iam_role_policy_attachment" "ecs_execution_role_policy" {
 
 resource "aws_iam_role" "ecs_task_role" {
   name                  = "${var.project_name}-ecs-task-role"
-  description           = "" // TODO:
+  description           = "ECS Task Role"
   force_detach_policies = true
 
   assume_role_policy = jsonencode({
@@ -324,6 +328,15 @@ resource "aws_lb_target_group" "mediawiki" {
   protocol    = "HTTP"
   vpc_id      = aws_vpc.main.id
   target_type = "ip"
+
+  health_check {
+    path                = "/"
+    healthy_threshold   = 3
+    unhealthy_threshold = 3
+    timeout             = 5
+    interval            = 30
+    matcher             = "200-399"
+  }
 
   tags = {
     Name        = "${var.project_name}-tg"
