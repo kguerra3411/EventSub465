@@ -29,10 +29,10 @@ resource "aws_s3_bucket_public_access_block" "public_access_block" {
 }
 
 resource "aws_db_instance" "wiki_db" {
+  identifier        = "${var.project_name}-db"
   allocated_storage = 10
   engine            = "mariadb"
   instance_class    = "db.t3.micro"
-  identifier        = "wiki"
   db_name           = var.db_name
   username          = var.db_username
   password          = var.db_password
@@ -42,4 +42,9 @@ resource "aws_db_instance" "wiki_db" {
   #db_subnet_group_name = aws_db_subnet_group.my_db_subnet_group.name
 
   skip_final_snapshot = true
+
+  tags = {
+    Name        = "${var.project_name}-db"
+    Environment = var.environment
+  }
 }
