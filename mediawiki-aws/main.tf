@@ -170,22 +170,30 @@ resource "aws_s3_bucket_public_access_block" "public_access_block" {
   restrict_public_buckets = true
 }
 
-resource "aws_db_instance" "wiki_db" {
-  identifier          = "${var.project_name}-db"
-  allocated_storage   = 10
-  engine              = "mariadb"
-  engine_version      = "11.4.5" # latest version supported by RDS
-  instance_class      = "db.t3.micro"
-  db_name             = var.db_name
-  username            = var.db_username
-  password            = var.db_password
-  port                = "3306" #can be whatever
-  deletion_protection = false
-  #once we have security groups and subnets set up in the vpc we'd add them here i think
-  #vpc_security_group_ids = [aws_security_group.rds_sg.id]
-  #db_subnet_group_name = aws_db_subnet_group.my_db_subnet_group.name
+resource "aws_db_subnet_group" "main" {
+  name       = "${var.project_name}-db-subnet-group"
+  subnet_ids = aws_subnet.private[*].id
 
-  skip_final_snapshot = true
+  tags = {
+    Name        = "${var.project_name}-db-subnet-group"
+    Environment = var.environment
+  }
+}
+
+resource "aws_db_instance" "wiki_db" {
+  identifier             = "${var.project_name}-db"
+  allocated_storage      = 10
+  engine                 = "mariadb"
+  engine_version         = "11.4.5" # latest version supported by RDS
+  instance_class         = "db.t3.micro"
+  db_name                = var.db_name
+  username               = var.db_username
+  password               = var.db_password
+  port                   = 3306
+  vpc_security_group_ids = [aws_security_group.db.id]
+  db_subnet_group_name   = aws_db_subnet_group.main.name
+  skip_final_snapshot    = true
+  deletion_protection    = false
 
   tags = {
     Name        = "${var.project_name}-db"
