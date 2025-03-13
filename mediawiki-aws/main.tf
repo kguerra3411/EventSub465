@@ -32,6 +32,7 @@ resource "aws_db_instance" "wiki_db" {
   identifier        = "${var.project_name}-db"
   allocated_storage = 10
   engine            = "mariadb"
+  engine_version    = "11.4.5" # latest version supported by RDS
   instance_class    = "db.t3.micro"
   db_name           = var.db_name
   username          = var.db_username
