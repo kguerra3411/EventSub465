@@ -200,3 +200,44 @@ resource "aws_db_instance" "wiki_db" {
     Environment = var.environment
   }
 }
+
+resource "aws_ecs_cluster" "main" {
+  name = "${var.project_name}-cluster"
+  // TODO:
+
+  tags = {
+    Name        = "${var.project_name}-cluster"
+    Environment = var.environment
+  }
+}
+
+resource "aws_ecs_task_definition" "mediawiki" {
+  family = "${var.project_name}-task"
+
+  container_definitions = {
+    // TODO:
+  }
+
+  tags = {
+    Name        = "${var.project_name}-cluster"
+    Environment = var.environment
+  }
+}
+
+resource "aws_iam_role" "ecs_execution_role" {
+  name = "${var.project_name}-ecs_execution_role"
+
+  assume_role_policy = jsonencode({
+    // TODO:
+  })
+}
+
+resource "aws_ecs_service" "mediawiki" {
+  name = "${var.project_name}-service"
+  // TODO:
+
+  tags = {
+    Name        = "${var.project_name}-cluster"
+    Environment = var.environment
+  }
+}
