@@ -210,6 +210,24 @@ resource "aws_ecs_cluster" "main" {
   }
 }
 
+resource "aws_cloudwatch_log_group" "mediawiki_logs" {
+  name              = "/ecs/${var.project_name}"
+  retention_in_days = 7
+
+  tags = {
+    Name        = "${var.project_name}-logs"
+    Environment = var.environment
+  }
+}
+
+resource "aws_cloudwatch_log_group" "api_gateway_logs" {
+  name              = "/api-gateway/${var.project_name}"
+  retention_in_days = 7
+}
+
+
+
+
 resource "aws_ecs_task_definition" "mediawiki" {
   family                   = "${var.project_name}-task"
   network_mode             = "awsvpc"
@@ -230,6 +248,14 @@ resource "aws_ecs_task_definition" "mediawiki" {
         protocol      = "tcp"
       }
     ]
+    logConfiguration = {
+      logDriver = "awslogs"
+      options = {
+        awslogs-group         = aws_cloudwatch_log_group.mediawiki_logs.name
+        awslogs-region        = var.aws_region
+        awslogs-stream-prefix = "ecs"
+      }
+    }
     environment = [
       {
         name  = "MYSQL_HOST"
@@ -386,3 +412,190 @@ resource "aws_ecs_service" "mediawiki" {
     Environment = var.environment
   }
 }
+
+#define the structure and other configurations for a user profile
+resource "aws_cognito_user_pool" "main" {
+  name = "${var.project_name}-user-pool"
+
+  auto_verified_attributes = ["email"]
+
+  password_policy {
+    minimum_length    = 8
+    require_lowercase = true
+    require_numbers   = true
+    require_symbols   = false
+    require_uppercase = true
+  }
+
+  account_recovery_setting {
+    recovery_mechanism {
+      name     = "verified_email"
+      priority = 1
+    }
+  }
+
+  tags = {
+    Name        = "${var.project_name}-user-pool"
+    Environment = var.environment
+  }
+}
+
+resource "aws_cognito_user_pool" "main" {
+  name = "${var.project_name}-user-pool"
+
+  auto_verified_attributes = ["email"]
+
+  password_policy {
+    minimum_length    = 8
+    require_lowercase = true
+    require_numbers   = true
+    require_symbols   = false
+    require_uppercase = true
+  }
+
+  account_recovery_setting {
+    recovery_mechanism {
+      name     = "verified_email"
+      priority = 1
+    }
+  }
+
+  tags = {
+    Name        = "${var.project_name}-user-pool"
+    Environment = var.environment
+  }
+}
+
+# REST API to proxy MediaWiki access
+# Catch-all resource
+# Allow public GET access (e.g., viewing pages)
+# Protect POST (edit) access using Cognito
+# Proxy GET requests to ALB
+# Proxy POST requests to ALB
+# Deploy the API Gateway
+
+resource "aws_api_gateway_rest_api" "wiki_api" {
+  name        = "${var.project_name}-wiki-api"
+  description = "API Gateway protecting MediaWiki edits with Cognito"
+}
+
+
+resource "aws_api_gateway_resource" "proxy" {
+  rest_api_id = aws_api_gateway_rest_api.wiki_api.id
+  parent_id   = aws_api_gateway_rest_api.wiki_api.root_resource_id
+  path_part   = "{proxy+}"
+}
+
+resource "aws_api_gateway_method" "proxy_get" {
+  rest_api_id   = aws_api_gateway_rest_api.wiki_api.id
+  resource_id   = aws_api_gateway_resource.proxy.id
+  http_method   = "GET"
+  authorization = "NONE"
+  request_parameters = {
+    "method.request.path.proxy" = true
+  }
+}
+
+resource "aws_api_gateway_authorizer" "wiki_auth" {
+  name            = "${var.project_name}-wiki-auth"
+  rest_api_id     = aws_api_gateway_rest_api.wiki_api.id
+  identity_source = "method.request.header.Authorization"
+  type            = "COGNITO_USER_POOLS"
+  provider_arns   = [aws_cognito_user_pool.main.arn]
+}
+
+resource "aws_api_gateway_method" "proxy_post" {
+  rest_api_id   = aws_api_gateway_rest_api.wiki_api.id
+  resource_id   = aws_api_gateway_resource.proxy.id
+  http_method   = "POST"
+  authorization = "COGNITO_USER_POOLS"
+  authorizer_id = aws_api_gateway_authorizer.wiki_auth.id
+  request_parameters = {
+    "method.request.path.proxy" = true
+  }
+}
+
+resource "aws_api_gateway_integration" "proxy_get" {
+  rest_api_id             = aws_api_gateway_rest_api.wiki_api.id
+  resource_id             = aws_api_gateway_resource.proxy.id
+  http_method             = aws_api_gateway_method.proxy_get.http_method
+  integration_http_method = "GET"
+  type                    = "HTTP_PROXY"
+  uri                     = "http://${aws_lb.main.dns_name}/{proxy}"
+  request_parameters = {
+    "integration.request.path.proxy" = "method.request.path.proxy"
+  }
+}
+
+resource "aws_api_gateway_integration" "proxy_post" {
+  rest_api_id             = aws_api_gateway_rest_api.wiki_api.id
+  resource_id             = aws_api_gateway_resource.proxy.id
+  http_method             = aws_api_gateway_method.proxy_post.http_method
+  integration_http_method = "POST"
+  type                    = "HTTP_PROXY"
+  uri                     = "http://${aws_lb.main.dns_name}/{proxy}"
+  request_parameters = {
+    "integration.request.path.proxy" = "method.request.path.proxy"
+  }
+}
+
+resource "aws_api_gateway_integration" "proxy_put" {
+  rest_api_id             = aws_api_gateway_rest_api.wiki_api.id
+  resource_id             = aws_api_gateway_resource.proxy.id
+  http_method             = aws_api_gateway_method.proxy_post.http_method
+  integration_http_method = "PUT"
+  type                    = "HTTP_PROXY"
+  uri                     = "http://${aws_lb.main.dns_name}/{proxy}"
+  request_parameters = {
+    "integration.request.path.proxy" = "method.request.path.proxy"
+  }
+}
+
+resource "aws_api_gateway_integration" "proxy_delete" {
+  rest_api_id             = aws_api_gateway_rest_api.wiki_api.id
+  resource_id             = aws_api_gateway_resource.proxy.id
+  http_method             = aws_api_gateway_method.proxy_post.http_method
+  integration_http_method = "DELETE"
+  type                    = "HTTP_PROXY"
+  uri                     = "http://${aws_lb.main.dns_name}/{proxy}"
+  request_parameters = {
+    "integration.request.path.proxy" = "method.request.path.proxy"
+  }
+}
+
+resource "aws_api_gateway_deployment" "wiki_deploy" {
+  depends_on = [
+    aws_api_gateway_integration.proxy_get,
+    aws_api_gateway_integration.proxy_post
+  ]
+  rest_api_id = aws_api_gateway_rest_api.wiki_api.id
+  stage_name  = aws_api_gateway_stage.prod.stage_name
+}
+
+resource "aws_api_gateway_stage" "prod" {
+  stage_name    = "prod"
+  rest_api_id   = aws_api_gateway_rest_api.wiki_api.id
+  deployment_id = aws_api_gateway_deployment.wiki_deploy.id
+
+  access_log_settings {
+    destination_arn = aws_cloudwatch_log_group.api_gateway_logs.arn
+    format = jsonencode({
+      requestId         = "$context.requestId",
+      requestTime       = "$context.requestTime",
+      httpMethod        = "$context.httpMethod",
+      resourcePath      = "$context.resourcePath",
+      status            = "$context.status",
+      responseLength    = "$context.responseLength",
+      integrationStatus = "$context.integrationStatus",
+      user              = "$context.identity.user"
+    })
+  }
+
+  xray_tracing_enabled = true
+  tags = {
+    Name        = "${var.project_name}-gateway-stage"
+    Environment = var.environment
+  }
+}
+
+
