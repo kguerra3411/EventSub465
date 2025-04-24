@@ -413,7 +413,6 @@ resource "aws_ecs_service" "mediawiki" {
   }
 }
 
-#define the structure and other configurations for a user profile
 resource "aws_cognito_user_pool" "main" {
   name = "${var.project_name}-user-pool"
 
@@ -440,30 +439,17 @@ resource "aws_cognito_user_pool" "main" {
   }
 }
 
-resource "aws_cognito_user_pool" "main" {
-  name = "${var.project_name}-user-pool"
+resource "aws_cognito_user_pool_client" "main" {
+  name         = "${var.project_name}-user-pool-client"
+  user_pool_id = aws_cognito_user_pool.main.id
 
-  auto_verified_attributes = ["email"]
+  generate_secret = false
 
-  password_policy {
-    minimum_length    = 8
-    require_lowercase = true
-    require_numbers   = true
-    require_symbols   = false
-    require_uppercase = true
-  }
-
-  account_recovery_setting {
-    recovery_mechanism {
-      name     = "verified_email"
-      priority = 1
-    }
-  }
-
-  tags = {
-    Name        = "${var.project_name}-user-pool"
-    Environment = var.environment
-  }
+  explicit_auth_flows = [
+    "ALLOW_USER_PASSWORD_AUTH",
+    "ALLOW_REFRESH_TOKEN_AUTH",
+    "ALLOW_USER_SRP_AUTH",
+  ]
 }
 
 # REST API to proxy MediaWiki access
@@ -473,6 +459,15 @@ resource "aws_cognito_user_pool" "main" {
 # Proxy GET requests to ALB
 # Proxy POST requests to ALB
 # Deploy the API Gateway
+
+resource "aws_api_gateway_authorizer" "wiki_auth" {
+  name            = "${var.project_name}-wiki-auth"
+  rest_api_id     = aws_api_gateway_rest_api.wiki_api.id
+  identity_source = "method.request.header.Authorization"
+  type            = "COGNITO_USER_POOLS"
+  provider_arns   = [aws_cognito_user_pool.main.arn]
+}
+
 
 resource "aws_api_gateway_rest_api" "wiki_api" {
   name        = "${var.project_name}-wiki-api"
@@ -496,18 +491,32 @@ resource "aws_api_gateway_method" "proxy_get" {
   }
 }
 
-resource "aws_api_gateway_authorizer" "wiki_auth" {
-  name            = "${var.project_name}-wiki-auth"
-  rest_api_id     = aws_api_gateway_rest_api.wiki_api.id
-  identity_source = "method.request.header.Authorization"
-  type            = "COGNITO_USER_POOLS"
-  provider_arns   = [aws_cognito_user_pool.main.arn]
-}
-
 resource "aws_api_gateway_method" "proxy_post" {
   rest_api_id   = aws_api_gateway_rest_api.wiki_api.id
   resource_id   = aws_api_gateway_resource.proxy.id
   http_method   = "POST"
+  authorization = "COGNITO_USER_POOLS"
+  authorizer_id = aws_api_gateway_authorizer.wiki_auth.id
+  request_parameters = {
+    "method.request.path.proxy" = true
+  }
+}
+
+resource "aws_api_gateway_method" "proxy_put" {
+  rest_api_id   = aws_api_gateway_rest_api.wiki_api.id
+  resource_id   = aws_api_gateway_resource.proxy.id
+  http_method   = "PUT"
+  authorization = "COGNITO_USER_POOLS"
+  authorizer_id = aws_api_gateway_authorizer.wiki_auth.id
+  request_parameters = {
+    "method.request.path.proxy" = true
+  }
+}
+
+resource "aws_api_gateway_method" "proxy_delete" {
+  rest_api_id   = aws_api_gateway_rest_api.wiki_api.id
+  resource_id   = aws_api_gateway_resource.proxy.id
+  http_method   = "DELETE"
   authorization = "COGNITO_USER_POOLS"
   authorizer_id = aws_api_gateway_authorizer.wiki_auth.id
   request_parameters = {
@@ -542,7 +551,7 @@ resource "aws_api_gateway_integration" "proxy_post" {
 resource "aws_api_gateway_integration" "proxy_put" {
   rest_api_id             = aws_api_gateway_rest_api.wiki_api.id
   resource_id             = aws_api_gateway_resource.proxy.id
-  http_method             = aws_api_gateway_method.proxy_post.http_method
+  http_method             = aws_api_gateway_method.proxy_put.http_method
   integration_http_method = "PUT"
   type                    = "HTTP_PROXY"
   uri                     = "http://${aws_lb.main.dns_name}/{proxy}"
@@ -554,7 +563,7 @@ resource "aws_api_gateway_integration" "proxy_put" {
 resource "aws_api_gateway_integration" "proxy_delete" {
   rest_api_id             = aws_api_gateway_rest_api.wiki_api.id
   resource_id             = aws_api_gateway_resource.proxy.id
-  http_method             = aws_api_gateway_method.proxy_post.http_method
+  http_method             = aws_api_gateway_method.proxy_delete.http_method
   integration_http_method = "DELETE"
   type                    = "HTTP_PROXY"
   uri                     = "http://${aws_lb.main.dns_name}/{proxy}"
@@ -564,12 +573,18 @@ resource "aws_api_gateway_integration" "proxy_delete" {
 }
 
 resource "aws_api_gateway_deployment" "wiki_deploy" {
-  depends_on = [
-    aws_api_gateway_integration.proxy_get,
-    aws_api_gateway_integration.proxy_post
-  ]
   rest_api_id = aws_api_gateway_rest_api.wiki_api.id
-  stage_name  = aws_api_gateway_stage.prod.stage_name
+
+  depends_on = [
+    aws_api_gateway_method.proxy_get,
+    aws_api_gateway_method.proxy_post,
+    aws_api_gateway_method.proxy_put,
+    aws_api_gateway_method.proxy_delete,
+    aws_api_gateway_integration.proxy_get,
+    aws_api_gateway_integration.proxy_post,
+    aws_api_gateway_integration.proxy_put,
+    aws_api_gateway_integration.proxy_delete,
+  ]
 }
 
 resource "aws_api_gateway_stage" "prod" {
@@ -592,10 +607,34 @@ resource "aws_api_gateway_stage" "prod" {
   }
 
   xray_tracing_enabled = true
+
   tags = {
     Name        = "${var.project_name}-gateway-stage"
     Environment = var.environment
   }
 }
 
+# IAM roles for api gateway
+resource "aws_iam_role" "apigw_cloudwatch" {
+  name = "${var.project_name}-apigw-cloudwatch-role"
 
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { Service = "apigateway.amazonaws.com" }
+      Action    = "sts:AssumeRole"
+    }]
+  })
+}
+
+
+resource "aws_iam_role_policy_attachment" "apigw_logs" {
+  role       = aws_iam_role.apigw_cloudwatch.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs"
+}
+
+
+resource "aws_api_gateway_account" "account" {
+  cloudwatch_role_arn = aws_iam_role.apigw_cloudwatch.arn
+}
