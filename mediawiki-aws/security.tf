@@ -83,10 +83,19 @@ resource "aws_security_group" "efs" {
   vpc_id      = aws_vpc.main.id
 
   ingress {
+    description     = "NFS from ECS"
     from_port       = 2049
     to_port         = 2049
     protocol        = "tcp"
     security_groups = [aws_security_group.ecs.id]
+  }
+
+  ingress {
+    description = "NFS from VPC"
+    from_port   = 2049
+    to_port     = 2049
+    protocol    = "tcp"
+    cidr_blocks = [aws_vpc.main.cidr_block]
   }
 
   egress {
