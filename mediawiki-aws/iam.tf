@@ -53,6 +53,30 @@ resource "aws_iam_role" "ecs_task_role" {
   }
 }
 
+resource "aws_iam_policy" "ecs_efs_access" {
+  name        = "${var.project_name}-efs-access-policy"
+  description = "Policy for ECS tasks to access EFS"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "elasticfilesystem:ClientMount",
+          "elasticfilesystem:ClientWrite"
+        ]
+        Resource = aws_efs_file_system.mediawiki_settings.arn
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "ecs_efs_access" {
+  role       = aws_iam_role.ecs_task_role.name
+  policy_arn = aws_iam_policy.ecs_efs_access.arn
+}
+
 # IAM roles for api gateway
 resource "aws_iam_role" "apigw_cloudwatch" {
   name = "${var.project_name}-apigw-cloudwatch-role"
