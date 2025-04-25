@@ -38,3 +38,8 @@ resource "aws_cognito_user_pool_client" "main" {
     "ALLOW_USER_SRP_AUTH",
   ]
 }
+
+resource "aws_cognito_user_pool_domain" "main" {
+  domain       = "${var.project_name}-auth"
+  user_pool_id = aws_cognito_user_pool.main.id
+}
