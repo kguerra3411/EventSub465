@@ -21,3 +21,8 @@ output "cognito_user_pool_client_id" {
 output "cognito_user_pool_domain" {
   value = aws_cognito_user_pool_domain.main.domain
 }
+
+output "guardduty_detector_id" {
+  description = "ID of GuardDuty detector"
+  value       = aws_guardduty_detector.main.id
+}
