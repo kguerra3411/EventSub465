@@ -9,9 +9,9 @@ resource "aws_efs_file_system" "mediawiki_settings" {
 }
 
 resource "aws_efs_mount_target" "mediawiki_settings" {
-  count           = length(aws_subnet.public)
+  count           = length(aws_subnet.private)
   file_system_id  = aws_efs_file_system.mediawiki_settings.id
-  subnet_id       = aws_subnet.public[count.index].id
+  subnet_id       = aws_subnet.private[count.index].id
   security_groups = [aws_security_group.efs.id]
 }
 

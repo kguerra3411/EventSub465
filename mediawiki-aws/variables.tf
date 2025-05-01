@@ -39,3 +39,19 @@ variable "mediawiki_image" {
   type        = string
   default     = "thejolman/mediawiki-custom:latest"
 }
+
+variable "transfer_user_name" {
+  description = "Username for AWS Transfer Family user"
+  type        = string
+}
+
+variable "transfer_ssh_public_key" {
+  description = "SSH public key for AWS Transfer Family user"
+  type        = string
+}
+
+variable "transfer_allowed_cidrs" {
+  description = "Allowed CIDR blocks for SFTP access"
+  type        = list(string)
+  default     = ["0.0.0.0/0"]
+}
