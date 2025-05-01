@@ -1,14 +1,8 @@
 resource "aws_transfer_server" "transfer_family" {
-  endpoint_type          = "VPC"
+  endpoint_type          = "PUBLIC"
   identity_provider_type = "SERVICE_MANAGED"
   logging_role           = aws_iam_role.transfer_logging.arn
-
-  endpoint_details {
-    vpc_id             = aws_vpc.main.id
-    subnet_ids         = aws_subnet.private[*].id
-    security_group_ids = [aws_security_group.transfer.id]
-  }
-  protocols = ["SFTP"]
+  protocols              = ["SFTP"]
 
   tags = {
     Name        = "${var.project_name}-transfer-server"
