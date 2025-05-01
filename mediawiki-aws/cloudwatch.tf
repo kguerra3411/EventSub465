@@ -52,5 +52,5 @@ resource "aws_cloudwatch_metric_alarm" "guardduty_high_severity_alarm" {
   alarm_description   = "Triggered when a high severity GuardDuty finding is detected"
   treat_missing_data  = "notBreaching"
 
-    #i think we can set up an SNS notif from here too
+  #i think we can set up an SNS notif from here too
 }
