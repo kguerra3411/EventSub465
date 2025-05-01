@@ -42,7 +42,7 @@ resource "aws_ecs_task_definition" "mediawiki" {
     mountPoints = [
       {
         sourceVolume  = "mediawiki-settings"
-        containerPath = "/var/www/html/LocalSettings.php"
+        containerPath = "/mnt/settings"
         readOnly      = false
       }
     ]
@@ -83,6 +83,7 @@ resource "aws_ecs_task_definition" "mediawiki" {
 
       authorization_config {
         access_point_id = aws_efs_access_point.mediawiki_settings.id
+        iam = "ENABLED"
       }
     }
   }

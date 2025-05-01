@@ -51,28 +51,32 @@ resource "aws_iam_role_policy" "transfer_family_efs_access" {
   role   = aws_iam_role.transfer_family.id
 
   policy = jsonencode({
-    Version = "2012-10-17"
+    Version = "2012-10-17",
     Statement = [
       {
-        Effect = "Allow"
+        Effect = "Allow",
         Action = [
           "elasticfilesystem:ClientMount",
           "elasticfilesystem:ClientWrite",
           "elasticfilesystem:ClientRootAccess"
+        ],
+        Resource = [
+          aws_efs_file_system.mediawiki_settings.arn,
+          aws_efs_access_point.mediawiki_settings.arn
         ]
-        Resource = aws_efs_file_system.mediawiki_settings.arn
       },
       {
-        Effect = "Allow"
+        Effect = "Allow",
         Action = [
           "elasticfilesystem:DescribeAccessPoints",
           "elasticfilesystem:DescribeFileSystems"
-        ]
+        ],
         Resource = "*"
       }
     ]
   })
 }
+
 
 resource "aws_iam_role_policy_attachment" "ecs_execution_role_policy" {
   role       = aws_iam_role.ecs_execution_role.name
