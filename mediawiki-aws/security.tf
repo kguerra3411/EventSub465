@@ -98,6 +98,13 @@ resource "aws_security_group" "efs" {
     cidr_blocks = [aws_vpc.main.cidr_block]
   }
 
+  ingress {
+    description = "NFS from SFTP"
+    from_port = 2222
+    to_port = 2222
+    protocol = "sftp"
+  }
+
   egress {
     from_port   = 0
     to_port     = 0
