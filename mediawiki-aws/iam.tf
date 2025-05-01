@@ -57,13 +57,17 @@ resource "aws_iam_role_policy" "transfer_family_efs_access" {
         Effect = "Allow"
         Action = [
           "elasticfilesystem:ClientMount",
-          "elasticfilesystem:ClientWrite"
+          "elasticfilesystem:ClientWrite",
+          "elasticfilesystem:ClientRootAccess"
         ]
         Resource = aws_efs_file_system.mediawiki_settings.arn
       },
       {
         Effect = "Allow"
-        Action = "elasticfilesystem:DescribeAccessPoints"
+        Action = [
+          "elasticfilesystem:DescribeAccessPoints",
+          "elasticfilesystem:DescribeFileSystems"
+        ]
         Resource = "*"
       }
     ]
