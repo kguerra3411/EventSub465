@@ -47,8 +47,8 @@ resource "aws_iam_role" "transfer_family" {
 }
 
 resource "aws_iam_role_policy" "transfer_family_efs_access" {
-  name   = "${var.project_name}-transfer-efs-access"
-  role   = aws_iam_role.transfer_family.id
+  name = "${var.project_name}-transfer-efs-access"
+  role = aws_iam_role.transfer_family.id
 
   policy = jsonencode({
     Version = "2012-10-17",
@@ -109,22 +109,41 @@ resource "aws_iam_role" "ecs_task_role" {
 
 resource "aws_iam_policy" "ecs_efs_access" {
   name        = "${var.project_name}-efs-access-policy"
-  description = "Policy for ECS tasks to access EFS"
+  description = "Policy for ECS tasks to access EFS and create directories"
 
   policy = jsonencode({
-    Version = "2012-10-17"
+    Version = "2012-10-17",
     Statement = [
       {
-        Effect = "Allow"
+        Effect = "Allow",
         Action = [
           "elasticfilesystem:ClientMount",
-          "elasticfilesystem:ClientWrite"
-        ]
+          "elasticfilesystem:ClientWrite",
+          "elasticfilesystem:ClientRootAccess"
+        ],
         Resource = aws_efs_file_system.mediawiki_settings.arn
+      },
+      {
+        Effect = "Allow",
+        Action = [
+          "elasticfilesystem:ClientMount",
+          "elasticfilesystem:ClientWrite",
+          "elasticfilesystem:ClientRootAccess"
+        ],
+        Resource = aws_efs_access_point.mediawiki_settings.arn
+      },
+      {
+        Effect = "Allow",
+        Action = [
+          "elasticfilesystem:DescribeAccessPoints",
+          "elasticfilesystem:DescribeFileSystems"
+        ],
+        Resource = "*"
       }
     ]
   })
 }
+
 
 resource "aws_iam_role_policy_attachment" "ecs_efs_access" {
   role       = aws_iam_role.ecs_task_role.name
