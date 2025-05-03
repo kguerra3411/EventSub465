@@ -62,14 +62,17 @@ resource "aws_iam_role_policy" "transfer_family_efs_access" {
         ],
         Resource = [
           aws_efs_file_system.mediawiki_settings.arn,
-          aws_efs_access_point.mediawiki_settings.arn
+          aws_efs_access_point.mediawiki_settings.arn,
+          "${aws_efs_file_system.mediawiki_settings.arn}/*"
         ]
       },
       {
         Effect = "Allow",
         Action = [
           "elasticfilesystem:DescribeAccessPoints",
-          "elasticfilesystem:DescribeFileSystems"
+          "elasticfilesystem:DescribeFileSystems",
+          "elasticfilesystem:CreateAccessPoint",
+          "elasticfilesystem:PutFileSystemPolicy"
         ],
         Resource = "*"
       }
