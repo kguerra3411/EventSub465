@@ -19,7 +19,7 @@ resource "aws_transfer_user" "mediawiki_user" {
 
   home_directory_mappings {
     entry  = "/"
-    target = "/fs-${split("-", aws_efs_file_system.mediawiki_settings.id)[1]}/fsap-${split("-", aws_efs_access_point.mediawiki_settings.id)[1]}"
+    target = "/${aws_efs_access_point.mediawiki_settings.id}"
   }
 
   tags = {
