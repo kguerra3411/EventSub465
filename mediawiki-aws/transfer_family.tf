@@ -16,12 +16,8 @@ resource "aws_transfer_user" "mediawiki_user" {
   user_name = var.transfer_user_name
   role      = aws_iam_role.transfer_family.arn
 
-  home_directory_type = "LOGICAL"
-
-  home_directory_mappings {
-    entry  = "/"
-    target = "/${aws_efs_file_system.mediawiki_settings.id}"
-  }
+  home_directory_type = "PATH"
+  home_directory      = "/"
 
   tags = {
     Name        = var.transfer_user_name
