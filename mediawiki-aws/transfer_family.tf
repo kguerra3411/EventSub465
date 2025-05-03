@@ -20,7 +20,7 @@ resource "aws_transfer_user" "mediawiki_user" {
 
   home_directory_mappings {
     entry  = "/"
-    target = "/${aws_efs_access_point.mediawiki_settings.id}"
+    target = "/${aws_efs_file_system.mediawiki_settings.id}"
   }
 
   tags = {

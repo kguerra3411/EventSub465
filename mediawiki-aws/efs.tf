@@ -24,8 +24,7 @@ resource "aws_efs_access_point" "mediawiki_settings" {
   }
 
   root_directory {
-    # path = "/"
-    path = "/transfer_uploads"
+    path = "/"
     creation_info {
       owner_gid   = 33
       owner_uid   = 33
