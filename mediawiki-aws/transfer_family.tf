@@ -5,7 +5,6 @@ resource "aws_transfer_server" "transfer_family" {
   protocols              = ["SFTP"]
   domain                 = "EFS"
 
-
   tags = {
     Name        = "${var.project_name}-transfer-server"
     Environment = var.environment
