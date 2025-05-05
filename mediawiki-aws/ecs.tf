@@ -32,6 +32,17 @@ resource "aws_ecs_task_definition" "mediawiki" {
   # volume {
   #   name = "wiki-images"
   # }
+  volume {
+    name = "mediawiki-settings"
+    efs_volume_configuration {
+      file_system_id     = aws_efs_file_system.mediawiki_settings.id
+      transit_encryption = "ENABLED"
+      authorization_config {
+        access_point_id = aws_efs_access_point.mediawiki_settings.id
+        iam             = "ENABLED"
+      }
+    }
+  }
 
   container_definitions = jsonencode([{
     name      = "mediawiki"
@@ -46,11 +57,16 @@ resource "aws_ecs_task_definition" "mediawiki" {
       }
     ]
 
-    # mountPoints = [
-    #   {
-    #     containerPath = "/var/www/html/imagesLink"
-    #   }
-    # ]
+    mountPoints = [
+      {
+        containerPath = "/var/www/html/settings" # Mount point inside container
+        sourceVolume  = "mediawiki-settings"
+        readOnly      = false
+      }
+      # {
+      #   containerPath = "/var/www/html/imagesLink"
+      # }
+    ]
 
     logConfiguration = {
       logDriver = "awslogs"
@@ -82,16 +98,20 @@ resource "aws_ecs_task_definition" "mediawiki" {
         value = aws_s3_bucket.wikiuploads.bucket
       },
       {
-        name = "S3_CONFIG_FILE"
+        name  = "S3_CONFIG_FILE"
         value = var.config_file
       },
       {
-        name = "S3_LOGO_FILE"
+        name  = "S3_LOGO_FILE"
         value = var.logo_file
       },
       {
         name  = "AWS_S3_REGION"
         value = var.aws_region
+      },
+      {
+        name  = "MEDIAWIKI_SERVER_URL"
+        value = "http://${aws_lb.main.dns_name}"
       }
     ]
   }])
