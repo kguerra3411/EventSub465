@@ -70,6 +70,14 @@ resource "aws_ecs_task_definition" "mediawiki" {
       {
         name  = "MYSQL_PASSWORD"
         value = var.db_password
+      },
+      {
+        name  = "AWS_S3_BUCKET"
+        value = aws_s3_bucket.wikiuploads.bucket
+      },
+      {
+        name  = "AWS_S3_REGION"
+        value = var.aws_region
       }
     ]
   }])
