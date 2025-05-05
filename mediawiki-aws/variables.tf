@@ -37,7 +37,7 @@ variable "db_name" {
 variable "mediawiki_image" {
   description = "Docker Hub image for MediaWiki"
   type        = string
-  default     = "thejolman/mediawiki-custom:latest"
+  default     = "thejolman/mediawiki-aws:latest"
 }
 
 variable "transfer_user_name" {
