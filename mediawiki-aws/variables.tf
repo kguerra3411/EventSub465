@@ -55,3 +55,15 @@ variable "transfer_allowed_cidrs" {
   type        = list(string)
   default     = ["0.0.0.0/0"]
 }
+
+variable "config_file" {
+  description = "Name of MediaWiki configuration file"
+  type = string
+  default = "LocalSettings.php"
+}
+
+variable "logo_file" {
+  description = "Name of 135x135 MediaWiki logo file"
+  type = string
+  default = "logo.php"
+}

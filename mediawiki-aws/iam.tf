@@ -166,15 +166,14 @@ resource "aws_iam_policy" "ecs_s3_access" {
           aws_s3_bucket.wikiuploads.arn,
           "${aws_s3_bucket.wikiuploads.arn}/*"
         ]
+      },
+      {
+        "Effect": "Allow",
+        "Action": "s3:GetObject",
+        "Resource": "${aws_s3_bucket.wikiuploads.arn}/config/LocalSettings.php"
       }
     ]
   })
-}
-
-
-resource "aws_iam_role_policy_attachment" "ecs_efs_access" {
-  role       = aws_iam_role.ecs_task_role.name
-  policy_arn = aws_iam_policy.ecs_efs_access.arn
 }
 
 resource "aws_iam_role_policy_attachment" "ecs_s3_access" {

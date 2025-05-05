@@ -2,9 +2,9 @@ resource "aws_efs_file_system" "mediawiki_settings" {
   creation_token = "${var.project_name}-settings-efs"
   encrypted      = true
 
-  provisioner "local-exec" {
-    command = "aws efs put-file-system-policy --file-system-id ${self.id} --policy '{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"*\"},\"Action\":[\"elasticfilesystem:ClientWrite\",\"elasticfilesystem:ClientMount\"],\"Resource\":\"${self.arn}\"}]}'"
-  }
+  # provisioner "local-exec" {
+  #   command = "aws efs put-file-system-policy --file-system-id ${self.id} --policy '{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"*\"},\"Action\":[\"elasticfilesystem:ClientWrite\",\"elasticfilesystem:ClientMount\"],\"Resource\":\"${self.arn}\"}]}'"
+  # }
 
   tags = {
     Name        = "${var.project_name}-settings-efs"
