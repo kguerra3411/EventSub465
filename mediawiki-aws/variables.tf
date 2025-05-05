@@ -65,5 +65,5 @@ variable "config_file" {
 variable "logo_file" {
   description = "Name of 135x135 MediaWiki logo file"
   type = string
-  default = "logo.php"
+  default = "wiki.png"
 }
