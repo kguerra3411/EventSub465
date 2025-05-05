@@ -147,6 +147,11 @@ resource "aws_iam_policy" "ecs_efs_access" {
   })
 }
 
+resource "aws_iam_role_policy_attachment" "ecs_efs_access" {
+  role       = aws_iam_role.ecs_task_role.name
+  policy_arn = aws_iam_policy.ecs_efs_access.arn
+}
+
 resource "aws_iam_policy" "ecs_s3_access" {
   name        = "${var.project_name}-s3-access-policy"
   description = "Policy for ECS tasks to access S3 bucket for wiki uploads"
