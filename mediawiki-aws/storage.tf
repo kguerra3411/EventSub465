@@ -2,7 +2,7 @@
 
 resource "aws_s3_bucket" "wikiuploads" {
   bucket        = "${var.project_name}-bucket-${random_id.suffix.hex}"
-  force_destroy = true
+  force_destroy = true # remove for prod
 
   tags = {
     Name        = "${var.project_name}-bucket"
