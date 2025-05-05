@@ -37,7 +37,7 @@ variable "db_name" {
 variable "mediawiki_image" {
   description = "Docker Hub image for MediaWiki"
   type        = string
-  default     = "thejolman/mediawiki-custom:latest"
+  default     = "thejolman/mediawiki-aws:latest"
 }
 
 variable "transfer_user_name" {
@@ -54,4 +54,16 @@ variable "transfer_allowed_cidrs" {
   description = "Allowed CIDR blocks for SFTP access"
   type        = list(string)
   default     = ["0.0.0.0/0"]
+}
+
+variable "config_file" {
+  description = "Name of MediaWiki configuration file"
+  type = string
+  default = "LocalSettings.php"
+}
+
+variable "logo_file" {
+  description = "Name of 135x135 MediaWiki logo file"
+  type = string
+  default = "wiki.png"
 }

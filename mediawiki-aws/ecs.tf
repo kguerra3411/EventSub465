@@ -28,10 +28,27 @@ resource "aws_ecs_task_definition" "mediawiki" {
   execution_role_arn       = aws_iam_role.ecs_execution_role.arn
   task_role_arn            = aws_iam_role.ecs_task_role.arn
 
+  #  TODO: configure images volume
+  # volume {
+  #   name = "wiki-images"
+  # }
+  volume {
+    name = "mediawiki-settings"
+    efs_volume_configuration {
+      file_system_id     = aws_efs_file_system.mediawiki_settings.id
+      transit_encryption = "ENABLED"
+      authorization_config {
+        access_point_id = aws_efs_access_point.mediawiki_settings.id
+        iam             = "ENABLED"
+      }
+    }
+  }
+
   container_definitions = jsonencode([{
     name      = "mediawiki"
     image     = var.mediawiki_image
     essential = true
+
     portMappings = [
       {
         containerPort = 80
@@ -39,13 +56,18 @@ resource "aws_ecs_task_definition" "mediawiki" {
         protocol      = "tcp"
       }
     ]
+
     mountPoints = [
       {
+        containerPath = "/var/www/html/settings" # Mount point inside container
         sourceVolume  = "mediawiki-settings"
-        containerPath = "/mnt/settings"
         readOnly      = false
       }
+      # {
+      #   containerPath = "/var/www/html/imagesLink"
+      # }
     ]
+
     logConfiguration = {
       logDriver = "awslogs"
       options = {
@@ -70,28 +92,29 @@ resource "aws_ecs_task_definition" "mediawiki" {
       {
         name  = "MYSQL_PASSWORD"
         value = var.db_password
+      },
+      {
+        name  = "S3_CONFIG_BUCKET"
+        value = aws_s3_bucket.wikiuploads.bucket
+      },
+      {
+        name  = "S3_CONFIG_FILE"
+        value = var.config_file
+      },
+      {
+        name  = "S3_LOGO_FILE"
+        value = var.logo_file
+      },
+      {
+        name  = "AWS_S3_REGION"
+        value = var.aws_region
+      },
+      {
+        name  = "MEDIAWIKI_SERVER_URL"
+        value = "http://${aws_lb.main.dns_name}"
       }
     ]
   }])
-
-  volume {
-    name = "mediawiki-settings"
-
-    efs_volume_configuration {
-      file_system_id     = aws_efs_file_system.mediawiki_settings.id
-      transit_encryption = "ENABLED"
-
-      authorization_config {
-        access_point_id = aws_efs_access_point.mediawiki_settings.id
-        iam = "ENABLED"
-      }
-    }
-  }
-
-  tags = {
-    Name        = "${var.project_name}-cluster"
-    Environment = var.environment
-  }
 }
 
 resource "aws_ecs_service" "mediawiki" {
@@ -102,9 +125,9 @@ resource "aws_ecs_service" "mediawiki" {
   launch_type     = "FARGATE"
 
   network_configuration {
-    subnets          = aws_subnet.public[*].id
+    subnets          = aws_subnet.private[*].id
     security_groups  = [aws_security_group.ecs.id]
-    assign_public_ip = true
+    assign_public_ip = false
   }
 
   load_balancer {

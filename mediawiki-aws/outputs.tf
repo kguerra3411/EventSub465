@@ -8,20 +8,6 @@ output "rds_endpoint" {
   value       = aws_db_instance.wiki_db.address
 }
 
-output "cognito_user_pool_id" {
-  description = "The Cognito User Pool ID"
-  value       = aws_cognito_user_pool.main.id
-}
-
-output "cognito_user_pool_client_id" {
-  description = "The Cognito User Pool Client ID"
-  value       = aws_cognito_user_pool_client.main.id
-}
-
-output "cognito_user_pool_domain" {
-  value = aws_cognito_user_pool_domain.main.domain
-}
-
 output "guardduty_detector_id" {
   description = "ID of GuardDuty detector"
   value       = aws_guardduty_detector.main.id

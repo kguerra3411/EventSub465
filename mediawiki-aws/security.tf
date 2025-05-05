@@ -6,13 +6,23 @@ resource "aws_security_group" "alb" { # for load balancer
   vpc_id      = aws_vpc.main.id
 
   ingress { # inbound traffic
+    description = "Allow HTTP from anywhere"
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"] # allow traffic from anywhere
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description = "Allow HTTPS from anywhere"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   egress { # outbound traffic
+    description = "Allow all outbound traffic"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
@@ -39,6 +49,7 @@ resource "aws_security_group" "ecs" { # for container service
   }
 
   egress {
+    description = "Allow all outbound traffic"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
@@ -57,14 +68,15 @@ resource "aws_security_group" "db" { # for database service
   vpc_id      = aws_vpc.main.id
 
   ingress {
+    description     = "Allow MariahDB traffic from ECS Tasks"
     from_port       = 3306
     to_port         = 3306
     protocol        = "tcp"
     security_groups = [aws_security_group.ecs.id]
-    # this allows mariadb traffic (3306) from ecs security group
   }
 
   egress {
+    description = "Allow all outbound traffic"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
@@ -98,15 +110,8 @@ resource "aws_security_group" "efs" {
     security_groups = [aws_security_group.transfer.id]
   }
 
-  ingress {
-    description = "NFS from VPC"
-    from_port   = 2049
-    to_port     = 2049
-    protocol    = "tcp"
-    cidr_blocks = [aws_vpc.main.cidr_block]
-  }
-
   egress {
+    description = "Allow all outbound traffic"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
@@ -118,7 +123,7 @@ resource "aws_security_group" "efs" {
     Environment = var.environment
   }
 }
-// Security group for AWS Transfer Family SFTP server
+
 resource "aws_security_group" "transfer" {
   name        = "${var.project_name}-transfer-sg"
   description = "Security group for AWS Transfer Family server"
