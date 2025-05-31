@@ -107,18 +107,22 @@ resource "aws_iam_policy" "ecs_s3_access" {
         Action = [
           "s3:GetObject",
           "s3:PutObject",
-          "s3:DeleteObject",
           "s3:ListBucket"
         ],
         Resource = [
           aws_s3_bucket.wikiuploads.arn,
-          "${aws_s3_bucket.wikiuploads.arn}/*"
+          "${aws_s3_bucket.wikiuploads.arn}/images/*"
         ]
       },
       {
         "Effect" : "Allow",
         "Action" : "s3:GetObject",
         "Resource" : "${aws_s3_bucket.wikiuploads.arn}/config/LocalSettings.php"
+      },
+      {
+        "Effect" : "Allow",
+        "Action" : "s3:GetObject",
+        "Resource" : "${aws_s3_bucket.wikiuploads.arn}/config/${var.logo_file}"
       }
     ]
   })

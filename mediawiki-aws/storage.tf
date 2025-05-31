@@ -17,7 +17,7 @@ resource "random_id" "suffix" {
 resource "aws_s3_bucket_versioning" "bucket_versioning" {
   bucket = aws_s3_bucket.wikiuploads.id
   versioning_configuration {
-    status = "Disabled"
+    status = "Enabled"
   }
 }
 
