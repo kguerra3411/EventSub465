@@ -41,11 +41,11 @@ resource "aws_security_group" "ecs" { # for container service
   vpc_id      = aws_vpc.main.id
 
   ingress {
-    description     = "Allow HTTP from ALB only"
-    from_port       = 80
-    to_port         = 80
-    protocol        = "tcp"
+    from_port       = 0
+    to_port         = 0
+    protocol        = "-1"
     security_groups = [aws_security_group.alb.id]
+    # so basically accept all traffic as long as it comes from the alb security group
   }
 
   egress {
