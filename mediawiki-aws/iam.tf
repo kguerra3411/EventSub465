@@ -67,7 +67,10 @@ resource "aws_iam_policy" "ecs_efs_access" {
           "elasticfilesystem:ClientWrite",
           "elasticfilesystem:ClientRootAccess"
         ],
-        Resource = aws_efs_file_system.mediawiki_settings.arn
+        Resource = [
+          aws_efs_file_system.mediawiki_settings.arn,
+          aws_efs_file_system.mediawiki_images.arn
+        ]
       },
       {
         Effect = "Allow",
@@ -76,7 +79,10 @@ resource "aws_iam_policy" "ecs_efs_access" {
           "elasticfilesystem:ClientWrite",
           "elasticfilesystem:ClientRootAccess"
         ],
-        Resource = aws_efs_access_point.mediawiki_settings.arn
+        Resource = [
+          aws_efs_access_point.mediawiki_settings.arn,
+          aws_efs_access_point.mediawiki_images.arn
+        ]
       },
       {
         Effect = "Allow",
