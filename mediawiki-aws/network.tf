@@ -81,7 +81,7 @@ resource "aws_eip" "nat" {
 resource "aws_nat_gateway" "main" {
   # count = 1 # Match the count of aws_eip.nat if using count there
   allocation_id = aws_eip.nat.id
-  subnet_id = aws_subnet.public[0].id # Placing in the first public subnet
+  subnet_id     = aws_subnet.public[0].id # Placing in the first public subnet
 
   tags = {
     Name        = "${var.project_name}-nat-gateway"
@@ -97,7 +97,7 @@ resource "aws_route_table" "private" {
   vpc_id = aws_vpc.main.id
 
   route {
-    cidr_block     = "0.0.0.0/0"
+    cidr_block = "0.0.0.0/0"
     # Route outbound traffic from private subnets to the NAT Gateway
     nat_gateway_id = aws_nat_gateway.main.id
   }
