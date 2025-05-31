@@ -63,9 +63,3 @@ variable "enable_guardduty" {
   type        = bool
   default     = false
 }
-
-variable "availability_zone_count" {
-  description = "Number of availability zones to use"
-  type        = number
-  default     = 2
-}
