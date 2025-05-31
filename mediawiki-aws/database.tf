@@ -24,7 +24,7 @@ resource "aws_db_instance" "wiki_db" {
   db_subnet_group_name      = aws_db_subnet_group.main.name
   skip_final_snapshot       = false
   final_snapshot_identifier = "${var.project_name}-final-snapshot-${formatdate("YYYYMMDDhhmmss", timestamp())}"
-  deletion_protection       = true
+  deletion_protection       = var.enable_deletion_protection
 
   tags = {
     Name        = "${var.project_name}-db"

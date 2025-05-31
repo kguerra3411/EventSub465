@@ -51,3 +51,15 @@ variable "logo_file" {
   type        = string
   default     = "wiki.png"
 }
+
+variable "enable_deletion_protection" {
+  description = "Enable RDS deletion protection"
+  type        = bool
+  default     = false
+}
+
+variable "enable_guardduty" {
+  description = "Enable GuardDuty"
+  type        = bool
+  default     = false
+}
